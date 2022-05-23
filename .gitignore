@@ -1,0 +1,12 @@
+# misc
+.stack-work/
+.nix*
+*~
+
+# editors
+.nova
+.idea
+.vscode
+
+# env
+.env*
