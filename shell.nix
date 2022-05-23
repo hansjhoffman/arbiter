@@ -2,20 +2,7 @@ let
   sources = import ./nix/sources.nix { };
   pkgs = import sources.nixpkgs { };
 
-  haskellDeps = ps:
-    with ps; [
-      base
-      hspec
-      http-client
-      http-client-tls
-      http-types
-      rio
-      servant-server
-      wai
-      wai-core
-      warp
-      warp-tls
-    ];
+  haskellDeps = ps: with ps; [ base hspec rio ];
 
   ghc = pkgs.haskell.compiler.ghc922 haskellDeps;
 
