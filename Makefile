@@ -1,6 +1,5 @@
 # Build configuration
 # -------------------
-
 APP_NAME = `grep -Eo 'name: .*' package.yaml | cut -d ':' -f 2 | awk '{print $1}'`
 GIT_BRANCH = `git rev-parse --abbrev-ref HEAD`
 GIT_REVISION = `git rev-parse HEAD`
@@ -44,15 +43,11 @@ build-watch: ## Watch files for changes and re-build
 
 .PHONY: clean
 clean: ## Remove artificats
-	rm -rf .stack-work
+	stack clean
 
 
 # Development targets
 # -------------------
-
-.PHONY: deps
-deps: ## Insall dependencies
-	echo "not implemented!\n"
 
 .PHONY: format
 format: ## Format code
