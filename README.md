@@ -1,4 +1,4 @@
-# Arbiter
+# Project Arbiter
 
 CLI tool that will reach out to the Nomics API to grab all active crypto and then upload that to Algolia.
 

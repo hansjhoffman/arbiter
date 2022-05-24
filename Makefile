@@ -55,7 +55,7 @@ format: ## Format code
 
 .PHONY: run
 run: ## Run project
-	stack exec arbiter-exe
+	stack exec -- arbiter-exe --verbose
 
 .PHONY: test
 test: ## Test code
