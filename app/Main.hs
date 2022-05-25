@@ -8,7 +8,9 @@ import           Import
 import           Options.Applicative.Simple
 import qualified Paths_arbiter
 import           RIO.Process
+import qualified RIO.Text                      as T
 import           Run
+import           System.Environment             ( getEnv )
 
 
 main :: IO ()
@@ -19,11 +21,17 @@ main = do
     "Program description, also for command line arguments"
     (Options <$> switch (long "verbose" <> short 'v' <> help "Verbose output?"))
     empty
-  lo <- logOptionsHandle stderr (optionsVerbose options)
-  pc <- mkDefaultProcessContext
-  withLogFunc lo $ \lf ->
-    let app = App { appLogFunc        = lf
-                  , appProcessContext = pc
+  logOpts <- logOptionsHandle stderr (optionsVerbose options)
+  processCtx <- mkDefaultProcessContext
+  algoliaApiKey <- getEnv "RYKA_ALGOLIA_API_KEY"
+  algoliaAppId <- getEnv "RYKA_ALGOLIA_APP_ID"
+  algoliaIndex <- getEnv "RYKA_ALGOLIA_INDEX"
+  withLogFunc logOpts $ \lf ->
+    let app = App { appAlgoliaApiKey = T.pack algoliaApiKey
+                  , appAlgoliaAppId = T.pack algoliaAppId
+                  , appAlgoliaIndex = T.pack algoliaIndex
+                  , appLogFunc        = lf
                   , appOptions        = options
+                  , appProcessContext = processCtx
                   }
     in  runRIO app run

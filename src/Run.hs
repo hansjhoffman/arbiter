@@ -66,22 +66,24 @@ mkObjectID crypto = ObjectID (T.intercalate "-" parts)
 
 upsertEntries :: [Entry] -> RIO App ()
 upsertEntries entries = do
+  env <- ask
+  let algoliaIndex = view algoliaIndexL env
+      url =
+        "https://"
+          <> "alogliaAppId"
+          <> "-dsn.alogolia.net"
+          <> "/1/"
+          <> algoliaIndex
   nakedRequest <- HTTP.parseRequest (T.unpack url)
-  let req =
+  let algoliaApiKey = T.encodeUtf8 $ view algoliaApiKeyL env
+      algoliaAppId  = T.encodeUtf8 $ view algoliaAppIdL env
+      req =
         HTTP.setRequestMethod "POST"
-          $ HTTP.addRequestHeader "X-Algolia-API-Key" "algoliaApiKey"
-          $ HTTP.addRequestHeader "X-Algolia-Application-Id" "algoliaAppId"
+          $ HTTP.addRequestHeader "X-Algolia-API-Key" algoliaApiKey
+          $ HTTP.addRequestHeader "X-Algolia-Application-Id" algoliaAppId
           $ HTTP.setRequestBodyJSON entries nakedRequest
   res <- HTTP.httpNoBody req
   logInfo "Done"
- where
-  url :: Text
-  url =
-    "https://"
-      <> "alogliaAppId"
-      <> "-dsn.alogolia.net"
-      <> "/1/"
-      <> "algoliaIndex"
 
 
 run :: RIO App ()

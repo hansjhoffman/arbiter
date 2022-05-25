@@ -51,7 +51,7 @@ clean: ## Remove artificats
 
 .PHONY: format
 format: ## Format code
-	echo brittany --write-mode=inplace app/**/*.hs src/**/*.hs test/**/*.hs
+	brittany --write-mode=inplace app/**/*.hs src/**/*.hs test/**/*.hs
 
 .PHONY: run
 run: ## Run project
