@@ -43,9 +43,8 @@ instance ToJSON ObjectID where
 
 
 jsonOptions :: String -> JSON.Options
-jsonOptions prefix = JSON.defaultOptions
-  { JSON.fieldLabelModifier = map toLower . drop (length prefix)
-  }
+jsonOptions prefix =
+  JSON.defaultOptions { JSON.fieldLabelModifier = map toLower . drop (length prefix) }
 
 
 mkEntry :: Crypto -> Entry
@@ -60,27 +59,22 @@ mkObjectID :: Crypto -> ObjectID
 mkObjectID crypto = ObjectID (T.intercalate "-" parts)
  where
   parts :: [Text]
-  parts = RIO.map T.toLower
-    $ T.words (cryptoSymbol crypto <> " " <> cryptoName crypto)
+  parts = RIO.map T.toLower $ T.words (cryptoSymbol crypto <> " " <> cryptoName crypto)
 
 
 upsertEntries :: [Entry] -> RIO App ()
 upsertEntries entries = do
   env <- ask
-  let algoliaIndex = view algoliaIndexL env
-      url =
-        "https://"
-          <> "alogliaAppId"
-          <> "-dsn.alogolia.net"
-          <> "/1/"
-          <> algoliaIndex
+  let algoliaIndex  = view algoliaIndexL env
+      algoliaAppId  = view algoliaAppIdL env
+      algoliaApiKey = view algoliaApiKeyL env
+      url           = algoliaAppId <> "-dsn.algolia.net/1/indexes/" <> algoliaIndex <> "/batch"
   nakedRequest <- HTTP.parseRequest (T.unpack url)
-  let algoliaApiKey = T.encodeUtf8 $ view algoliaApiKeyL env
-      algoliaAppId  = T.encodeUtf8 $ view algoliaAppIdL env
-      req =
+  let req =
         HTTP.setRequestMethod "POST"
-          $ HTTP.addRequestHeader "X-Algolia-API-Key" algoliaApiKey
-          $ HTTP.addRequestHeader "X-Algolia-Application-Id" algoliaAppId
+          $ HTTP.setRequestSecure True
+          $ HTTP.addRequestHeader "X-Algolia-API-Key" (T.encodeUtf8 algoliaApiKey)
+          $ HTTP.addRequestHeader "X-Algolia-Application-Id" (T.encodeUtf8 algoliaAppId)
           $ HTTP.setRequestBodyJSON entries nakedRequest
   res <- HTTP.httpNoBody req
   logInfo "Done"
@@ -89,10 +83,10 @@ upsertEntries entries = do
 run :: RIO App ()
 run =
   let btc :: Crypto
-      btc = Crypto "btc" "https://someurl.com" "Bitcoin" "BTC"
+      btc = Crypto "btc" "https://some-image-url.com" "Bitcoin" "BTC"
 
       eth :: Crypto
-      eth = Crypto "eth" "https://someurl.com" "Ethereum" "ETH"
+      eth = Crypto "eth" "https://some-image-url.com" "Ethereum" "ETH"
 
       entries :: [Entry]
       entries = [mkEntry btc, mkEntry eth]

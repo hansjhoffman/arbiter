@@ -39,7 +39,7 @@ conf_layout:
   lconfig_altChooser:
     contents: 3
     tag: AltChooserBoundedSearch
-  lconfig_cols: 80
+  lconfig_cols: 100
   lconfig_columnAlignMode:
     contents: 0.7
     tag: ColumnAlignModeMajority
