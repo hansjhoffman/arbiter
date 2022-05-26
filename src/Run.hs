@@ -95,8 +95,17 @@ mkObjectID crypto = ObjectID (T.intercalate "-" parts)
   parts = RIO.map T.toLower $ T.words (cryptoSymbol crypto <> " " <> cryptoName crypto)
 
 
+mkBatchAction :: Crypto -> BatchAction
+mkBatchAction = BatchAction UpdateObject . mkEntry
+
+
 saveObjects :: [Crypto] -> RIO App ()
-saveObjects cryptos = undefined
+saveObjects [] = logInfo "Done!"
+saveObjects cs = do
+  let actions :: [BatchAction]
+      actions = RIO.map mkBatchAction $ take 50000 cs
+  saveBatch $ BatchRequest actions
+  saveObjects (drop 50000 cs)
 
 
 {- Algolia docs suggest a max batch size of 100K objects.
@@ -123,16 +132,10 @@ saveBatch batch = do
 run :: RIO App ()
 run = do
   logInfo "Uploading entries to Alogolia..."
-  saveBatch batch
+  saveObjects [btc, eth]
  where
   btc :: Crypto
   btc = Crypto "btc" "https://image-url.com" "Bitcoin" "BTC"
 
   eth :: Crypto
   eth = Crypto "eth" "https://image-url.com" "Ethereum" "ETH"
-
-  objects :: [BatchAction]
-  objects = [BatchAction UpdateObject (mkEntry btc), BatchAction UpdateObject (mkEntry eth)]
-
-  batch :: BatchRequest
-  batch = BatchRequest objects
