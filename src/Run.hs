@@ -17,9 +17,28 @@ data Crypto = Crypto
   , cryptoName    :: !Text
   , cryptoSymbol  :: !Text
   }
-  deriving (Eq, Generic, Show)
+  deriving (Generic, Show)
 
 instance FromJSON Crypto
+
+
+data UpdateAction = UpdateAction
+  { updateAction :: Text
+  , updateBody   :: Entry
+  }
+  deriving (Generic, Show)
+
+instance ToJSON UpdateAction where
+  toJSON     = JSON.genericToJSON $ jsonOptions "update"
+  toEncoding = JSON.genericToEncoding $ jsonOptions "update"
+
+
+newtype BatchRequest = BatchRequest
+  { requests :: [UpdateAction]
+  }
+  deriving (Generic, Show)
+
+instance ToJSON BatchRequest
 
 
 data Entry = Entry
@@ -28,7 +47,7 @@ data Entry = Entry
   , entryName     :: Text
   , entrySymbol   :: Text
   }
-  deriving (Eq, Generic, Show)
+  deriving (Generic, Show)
 
 instance ToJSON Entry where
   toJSON     = JSON.genericToJSON $ jsonOptions "entry"
@@ -36,15 +55,21 @@ instance ToJSON Entry where
 
 
 newtype ObjectID = ObjectID Text
-  deriving (Eq, Show)
+  deriving (Show)
 
 instance ToJSON ObjectID where
   toJSON (ObjectID id') = toJSON id'
 
 
 jsonOptions :: String -> JSON.Options
-jsonOptions prefix =
-  JSON.defaultOptions { JSON.fieldLabelModifier = map toLower . drop (length prefix) }
+jsonOptions prefix = JSON.defaultOptions
+  { JSON.fieldLabelModifier = applyFirst toLower . drop (length prefix)
+  }
+ where
+  applyFirst :: (Char -> Char) -> String -> String
+  applyFirst _ []       = []
+  applyFirst f [x     ] = [f x]
+  applyFirst f (x : xs) = f x : xs
 
 
 mkEntry :: Crypto -> Entry
@@ -62,32 +87,42 @@ mkObjectID crypto = ObjectID (T.intercalate "-" parts)
   parts = RIO.map T.toLower $ T.words (cryptoSymbol crypto <> " " <> cryptoName crypto)
 
 
-upsertEntries :: [Entry] -> RIO App ()
-upsertEntries entries = do
+
+saveObjects :: [Crypto] -> RIO App ()
+saveObjects cryptos = undefined
+
+
+saveBatch :: BatchRequest -> RIO App ()
+saveBatch batch = do
   env <- ask
   let algoliaIndex  = view algoliaIndexL env
       algoliaAppId  = view algoliaAppIdL env
       algoliaApiKey = view algoliaApiKeyL env
-      url           = algoliaAppId <> "-dsn.algolia.net/1/indexes/" <> algoliaIndex <> "/batch"
+      url           = "https://" <> algoliaAppId <> "-dsn.algolia.net"
   nakedRequest <- HTTP.parseRequest (T.unpack url)
   let req =
         HTTP.setRequestMethod "POST"
-          $ HTTP.setRequestSecure True
+          $ HTTP.setRequestPath ("1/indexes/" <> T.encodeUtf8 algoliaIndex <> "/batch")
           $ HTTP.addRequestHeader "X-Algolia-API-Key" (T.encodeUtf8 algoliaApiKey)
           $ HTTP.addRequestHeader "X-Algolia-Application-Id" (T.encodeUtf8 algoliaAppId)
-          $ HTTP.setRequestBodyJSON entries nakedRequest
+          $ HTTP.setRequestBodyJSON batch nakedRequest
   res <- HTTP.httpNoBody req
-  logInfo "Done"
+  logInfo ("Batch uploaded: " <> displayShow (HTTP.getResponseStatusCode res))
 
 
 run :: RIO App ()
-run =
-  let btc :: Crypto
-      btc = Crypto "btc" "https://some-image-url.com" "Bitcoin" "BTC"
+run = do
+  logInfo "Uploading entries to Alogolia..."
+  saveBatch batch
+ where
+  btc :: Crypto
+  btc = Crypto "btc" "https://image-url.com" "Bitcoin" "BTC"
 
-      eth :: Crypto
-      eth = Crypto "eth" "https://some-image-url.com" "Ethereum" "ETH"
+  eth :: Crypto
+  eth = Crypto "eth" "https://image-url.com" "Ethereum" "ETH"
 
-      entries :: [Entry]
-      entries = [mkEntry btc, mkEntry eth]
-  in  logInfo "Uploading entries to Alogolia"
+  objects :: [UpdateAction]
+  objects = [UpdateAction "updateObject" (mkEntry btc), UpdateAction "updateObject" (mkEntry eth)]
+
+  batch :: BatchRequest
+  batch = BatchRequest objects
