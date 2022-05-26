@@ -22,19 +22,27 @@ data Crypto = Crypto
 instance FromJSON Crypto
 
 
-data UpdateAction = UpdateAction
-  { updateAction :: Text
+data ActionType = UpdateObject
+  deriving Show
+
+instance ToJSON ActionType where
+  toJSON = \case
+    UpdateObject -> "updateObject"
+
+
+data BatchAction = BatchAction
+  { updateAction :: ActionType
   , updateBody   :: Entry
   }
   deriving (Generic, Show)
 
-instance ToJSON UpdateAction where
+instance ToJSON BatchAction where
   toJSON     = JSON.genericToJSON $ jsonOptions "update"
   toEncoding = JSON.genericToEncoding $ jsonOptions "update"
 
 
 newtype BatchRequest = BatchRequest
-  { requests :: [UpdateAction]
+  { requests :: [BatchAction]
   }
   deriving (Generic, Show)
 
@@ -87,11 +95,13 @@ mkObjectID crypto = ObjectID (T.intercalate "-" parts)
   parts = RIO.map T.toLower $ T.words (cryptoSymbol crypto <> " " <> cryptoName crypto)
 
 
-
 saveObjects :: [Crypto] -> RIO App ()
 saveObjects cryptos = undefined
 
 
+{- Algolia docs suggest a max batch size of 100K objects.
+ - https://www.algolia.com/doc/rest-api/search/#batch-write-operations
+ -}
 saveBatch :: BatchRequest -> RIO App ()
 saveBatch batch = do
   env <- ask
@@ -121,8 +131,8 @@ run = do
   eth :: Crypto
   eth = Crypto "eth" "https://image-url.com" "Ethereum" "ETH"
 
-  objects :: [UpdateAction]
-  objects = [UpdateAction "updateObject" (mkEntry btc), UpdateAction "updateObject" (mkEntry eth)]
+  objects :: [BatchAction]
+  objects = [BatchAction UpdateObject (mkEntry btc), BatchAction UpdateObject (mkEntry eth)]
 
   batch :: BatchRequest
   batch = BatchRequest objects
