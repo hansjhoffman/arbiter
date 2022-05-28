@@ -1,5 +1,6 @@
 use nix
 
+export NOMICS_API_KEY=some_value
 export RYKA_ALGOLIA_API_KEY=some_value
 export RYKA_ALGOLIA_APP_ID=some_value
 export RYKA_ALGOLIA_INDEX=some_value

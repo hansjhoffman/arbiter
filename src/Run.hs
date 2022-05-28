@@ -99,13 +99,17 @@ mkBatchAction :: Crypto -> BatchAction
 mkBatchAction = BatchAction UpdateObject . mkEntry
 
 
+batchSize :: Int
+batchSize = 25000
+
+
 saveObjects :: [Crypto] -> RIO App ()
 saveObjects [] = logInfo "Done!"
 saveObjects cs = do
   let actions :: [BatchAction]
-      actions = RIO.map mkBatchAction $ take 50000 cs
+      actions = RIO.map mkBatchAction $ take batchSize cs
   saveBatch $ BatchRequest actions
-  saveObjects (drop 50000 cs)
+  saveObjects (drop batchSize cs)
 
 
 {- Algolia docs suggest a max batch size of 100K objects.
@@ -127,6 +131,29 @@ saveBatch batch = do
           $ HTTP.setRequestBodyJSON batch nakedRequest
   res <- HTTP.httpNoBody req
   logInfo ("Batch uploaded: " <> displayShow (HTTP.getResponseStatusCode res))
+
+
+fetchAssets :: RIO App ()
+fetchAssets = do
+  env <- ask
+  let nomicsApiKey = view nomicsApiKeyL env
+      url          = "https://api.nomics.com"
+  nakedRequest <- HTTP.parseRequest (T.unpack url)
+  let req =
+        HTTP.setRequestMethod "GET"
+          $ HTTP.setRequestPath "v1/currencies/ticker"
+          $ HTTP.setRequestQueryString
+              [ ("key"     , Just . T.encodeUtf8 $ nomicsApiKey)
+              , ("page"    , Just . T.encodeUtf8 $ "1")
+              , ("per-page", Just . T.encodeUtf8 $ "100")
+              , ("interval", Just . T.encodeUtf8 $ "1d")
+              , ("status"  , Just . T.encodeUtf8 $ "active")
+              , ("convert" , Just . T.encodeUtf8 $ "usd")
+              ]
+              nakedRequest
+  -- res <- HTTP.httpJSON req
+  logInfo "What now?"
+
 
 
 run :: RIO App ()

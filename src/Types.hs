@@ -15,8 +15,9 @@ data App = App
   , appAlgoliaAppId   :: !Text
   , appAlgoliaIndex   :: !Text
   , appLogFunc        :: !LogFunc
-  , appProcessContext :: !ProcessContext
+  , appNomicsApiKey   :: !Text
   , appOptions        :: !Options
+  , appProcessContext :: !ProcessContext
   }
 
 instance HasLogFunc App where
@@ -43,3 +44,8 @@ class HasAlgoliaIndex env where
 instance HasAlgoliaIndex App where
   algoliaIndexL = lens appAlgoliaIndex (\x y -> x { appAlgoliaIndex = y })
 
+class HasNomicsApiKey env where
+   nomicsApiKeyL :: Lens' env Text
+
+instance HasNomicsApiKey App where
+  nomicsApiKeyL = lens appNomicsApiKey (\x y -> x { appNomicsApiKey = y })
