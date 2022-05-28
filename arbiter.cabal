@@ -24,10 +24,12 @@ source-repository head
 
 library
   exposed-modules:
+      Algolia
       Import
+      Nomics
+      ObjectId
       Run
       Types
-      Util
   other-modules:
       Paths_arbiter
   hs-source-dirs:
@@ -134,7 +136,8 @@ test-suite arbiter-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
-      UtilSpec
+      CryptoSpec
+      ObjectIdSpec
       Paths_arbiter
   hs-source-dirs:
       test
