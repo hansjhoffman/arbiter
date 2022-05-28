@@ -10,14 +10,10 @@ import           Nomics                         ( Crypto(..) )
 import qualified RIO.Text                      as T
 
 
-{- An opaque constructor. Do no export. -}
-
+{- An opaque constructor. Do no export.
+ -}
 newtype ObjectID = ObjectID Text
   deriving (Eq, Show)
-
--- instance Eq ObjectID where
---   ObjectID id1 == ObjectID id2 = id1 == id2
---   T.eqString
 
 instance ToJSON ObjectID where
   toJSON (ObjectID id') = toJSON id'
