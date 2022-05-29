@@ -5,15 +5,17 @@ module Run
 import qualified Algolia
 import           Import
 import           Nomics                         ( Crypto(..) )
--- import qualified Nomics
+import qualified Nomics
 
 
 run :: RIO App ()
 run = do
   logInfo "Fetching crypto assets..."
+  res <- Nomics.fetchAssets
+  logInfo "Done"
   -- cryptoAssets <- Nomics.fetchAssets
-  logInfo "Uploading entries to Alogolia..."
-  Algolia.saveObjects [btc, eth]
+  -- logInfo "Uploading entries to Alogolia..."
+  -- Algolia.saveObjects [btc, eth]
  where
   btc :: Crypto
   btc = Crypto "btc" "https://image-url.com" "Bitcoin" "BTC"

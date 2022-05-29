@@ -8,6 +8,10 @@ import           Data.Aeson                     ( (.:)
                                                 )
 import qualified Data.Aeson                    as JSON
 import           Import
+import           Network.HTTP.Simple            ( JSONException
+                                                , Request
+                                                , Response
+                                                )
 import qualified Network.HTTP.Simple           as HTTP
 import qualified RIO.Text                      as T
 
@@ -25,23 +29,57 @@ instance FromJSON Crypto where
     Crypto <$> (obj .: "id") <*> (obj .: "logo_url") <*> (obj .: "name") <*> (obj .: "symbol")
 
 
-fetchAssets :: RIO App ()
+request :: Request
+request =
+  HTTP.setRequestHost host
+    $ HTTP.setRequestPort 443
+    $ HTTP.setRequestSecure True
+    $ HTTP.setRequestPath path HTTP.defaultRequest
+ where
+  host = "api.nomics.com"
+  path = "v1/currencies/ticker"
+
+
+-- Nomics API has a rate limit of 1 request per second w/ free API keys. Need to debounce.
+fetchAssets :: RIO App (Either JSONException [Crypto])
 fetchAssets = do
   env <- ask
   let nomicsApiKey = view nomicsApiKeyL env
-      url          = "https://api.nomics.com"
-  nakedRequest <- HTTP.parseRequest (T.unpack url)
-  let req =
-        HTTP.setRequestMethod "GET"
-          $ HTTP.setRequestPath "v1/currencies/ticker"
-          $ HTTP.setRequestQueryString
-              [ ("key"     , Just . T.encodeUtf8 $ nomicsApiKey)
-              , ("page"    , Just . T.encodeUtf8 $ "1")
-              , ("per-page", Just . T.encodeUtf8 $ "100")
-              , ("interval", Just . T.encodeUtf8 $ "1d")
-              , ("status"  , Just . T.encodeUtf8 $ "active")
-              , ("convert" , Just . T.encodeUtf8 $ "usd")
-              ]
-              nakedRequest
-  -- res <- HTTP.httpJSON req
-  logInfo "What now?"
+  response <-
+    HTTP.httpJSONEither $ HTTP.setRequestQueryString
+      [ ("key"     , Just . T.encodeUtf8 $ nomicsApiKey)
+      , ("page"    , Just . T.encodeUtf8 $ "1")
+      , ("per-page", Just . T.encodeUtf8 $ "5")
+      , ("interval", Just . T.encodeUtf8 $ "1d")
+      , ("status"  , Just . T.encodeUtf8 $ "active")
+      , ("convert" , Just . T.encodeUtf8 $ "usd")
+      ]
+      request :: RIO App (Response (Either JSONException [Crypto]))
+  let totalItems = HTTP.getResponseHeader "X-Pagination-Total-Items" response
+  logInfo $ displayShow totalItems
+  logInfo $ displayShow (HTTP.getResponseBody response)
+  pure $ HTTP.getResponseBody response
+
+
+-- fetchAssets' :: RIO App [Crypto]
+-- fetchAssets' = fetchAssets'' 1 <$> ask
+--  where
+--   fetchAssets'' :: Int -> App -> RIO App (Either JSONException [Crypto])
+--   fetchAssets'' pageNumber env = do
+--     let nomicsApiKey = view nomicsApiKeyL env
+--     response <-
+--       HTTP.httpJSONEither $ HTTP.setRequestQueryString
+--         [ ("key"     , Just . T.encodeUtf8 $ nomicsApiKey)
+--         , ("page"    , Just . T.encodeUtf8 $ tshow pageNumber)
+--         , ("per-page", Just . T.encodeUtf8 $ "5")
+--         , ("interval", Just . T.encodeUtf8 $ "1d")
+--         , ("status"  , Just . T.encodeUtf8 $ "active")
+--         , ("convert" , Just . T.encodeUtf8 $ "usd")
+--         ]
+--         request :: RIO App (Response (Either JSONException [Crypto]))
+--     case response of
+--       Left  _ -> []
+--       Right _ -> []
+--     logInfo "Got page " <> show pageNumber
+--     let totalItems = HTTP.getResponseHeader "X-Pagination-Total-Items" response
+--     -- if totalItems / 100 (roundUp) > pageNumber then body ++ recursive_call else done
