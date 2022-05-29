@@ -24,7 +24,9 @@ instance ToJSON ActionType where
 
 data BatchAction = BatchAction
   { updateAction :: ActionType
+  -- ^ API action to peform
   , updateBody   :: Entry
+  -- ^ API data object
   }
   deriving (Generic, Show)
 
@@ -35,6 +37,7 @@ instance ToJSON BatchAction where
 
 newtype BatchRequest = BatchRequest
   { requests :: [BatchAction]
+  -- ^ Shape of body required by API
   }
   deriving (Generic, Show)
 
@@ -43,9 +46,13 @@ instance ToJSON BatchRequest
 
 data Entry = Entry
   { entryObjectID :: ObjectID
+  -- ^ Custom formatted Id required by API
   , entryLogoUrl  :: Text
+  -- ^ Same as crypto logo_url
   , entryName     :: Text
+  -- ^ Same as crypto name
   , entrySymbol   :: Text
+  -- ^ Same as crypto symbol
   }
   deriving (Generic, Show)
 
@@ -77,8 +84,7 @@ jsonOptions prefix = JSON.defaultOptions
   applyFirst f (x : xs) = f x : xs
 
 
-{- https://www.algolia.com/doc/rest-api/search/#batch-write-operations
- -}
+-- | https://www.algolia.com/doc/rest-api/search/#batch-write-operations
 saveBatch :: BatchRequest -> RIO App ()
 saveBatch batch = do
   env <- ask
@@ -97,8 +103,7 @@ saveBatch batch = do
   logInfo ("Batch uploaded: " <> displayShow (HTTP.getResponseStatusCode res))
 
 
-{- Algolia docs suggest a max batch size of 100K objects.
- -}
+-- | Algolia docs suggest a max batch size of 100K objects.
 batchSize :: Int
 batchSize = 25000
 
