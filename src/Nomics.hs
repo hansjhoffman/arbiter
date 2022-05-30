@@ -48,8 +48,8 @@ fetchAssets = do
   response <-
     HTTP.httpJSONEither $ HTTP.setRequestQueryString
       [ ("key"     , Just . T.encodeUtf8 $ nomicsApiKey)
-      , ("page"    , Just . T.encodeUtf8 $ tshow 1)
-      , ("per-page", Just . T.encodeUtf8 $ tshow 100)
+      , ("page"    , Just . T.encodeUtf8 $ tshow (1 :: Integer))
+      , ("per-page", Just . T.encodeUtf8 $ tshow (100 :: Integer))
       , ("interval", Just . T.encodeUtf8 $ "1d")
       , ("status"  , Just . T.encodeUtf8 $ "active")
       , ("convert" , Just . T.encodeUtf8 $ "usd")

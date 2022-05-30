@@ -13,13 +13,17 @@ import           Run
 import           System.Environment             ( getEnv )
 
 
+optionsParser :: Parser Options
+optionsParser = Options <$> switch (long "verbose" <> short 'v' <> help "Verbose output?")
+
+
 main :: IO ()
 main = do
   (options, ()) <- simpleOptions
     $(simpleVersion Paths_arbiter.version)
     "Header for command line arguments"
     "Program description, also for command line arguments"
-    (Options <$> switch (long "verbose" <> short 'v' <> help "Verbose output?"))
+    optionsParser
     empty
   logOpts <- logOptionsHandle stderr (optionsVerbose options)
   processCtx <- mkDefaultProcessContext
