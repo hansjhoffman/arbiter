@@ -10,13 +10,13 @@ import           Nomics                         ( Crypto(..) )
 import qualified RIO.Text                      as T
 
 
-{- An opaque constructor. Do no export.
- -}
+-- | An opaque type. Do no export.
+
 newtype ObjectID = ObjectID Text
   deriving (Eq, Show)
 
 instance ToJSON ObjectID where
-  toJSON (ObjectID id') = toJSON id'
+  toJSON (ObjectID objectId) = toJSON objectId
 
 
 mkObjectID :: Crypto -> ObjectID
