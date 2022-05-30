@@ -27,11 +27,11 @@ main = do
   algoliaAppId <- getEnv "RYKA_ALGOLIA_APP_ID"
   algoliaIndex <- getEnv "RYKA_ALGOLIA_INDEX"
   nomicsApiKey <- getEnv "NOMICS_API_KEY"
-  withLogFunc logOpts $ \lf ->
+  withLogFunc logOpts $ \logFn ->
     let app = App { appAlgoliaApiKey = T.pack algoliaApiKey
                   , appAlgoliaAppId = T.pack algoliaAppId
                   , appAlgoliaIndex = T.pack algoliaIndex
-                  , appLogFunc        = lf
+                  , appLogFn        = logFn
                   , appNomicsApiKey = T.pack nomicsApiKey
                   , appOptions        = options
                   , appProcessContext = processCtx

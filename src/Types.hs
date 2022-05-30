@@ -14,14 +14,14 @@ data App = App
   { appAlgoliaApiKey  :: !Text
   , appAlgoliaAppId   :: !Text
   , appAlgoliaIndex   :: !Text
-  , appLogFunc        :: !LogFunc
+  , appLogFn          :: !LogFunc
   , appNomicsApiKey   :: !Text
   , appOptions        :: !Options
   , appProcessContext :: !ProcessContext
   }
 
 instance HasLogFunc App where
-  logFuncL = lens appLogFunc (\x y -> x { appLogFunc = y })
+  logFuncL = lens appLogFn (\x y -> x { appLogFn = y })
 
 instance HasProcessContext App where
   processContextL = lens appProcessContext (\x y -> x { appProcessContext = y })
