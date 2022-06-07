@@ -31,7 +31,7 @@ main = do
   algoliaApiKey <- getEnv "RYKA_ALGOLIA_API_KEY"
   algoliaAppId  <- getEnv "RYKA_ALGOLIA_APP_ID"
   algoliaIndex  <- getEnv "RYKA_ALGOLIA_INDEX"
-  nomicsApiKey  <- getEnv "NOMICS_API_KEY"
+  nomicsApiKey  <- getEnv "RYKA_NOMICS_API_KEY"
   withLogFunc logOpts $ \logFn ->
     let app = App { appAlgoliaApiKey  = T.pack algoliaApiKey
                   , appAlgoliaAppId   = T.pack algoliaAppId
