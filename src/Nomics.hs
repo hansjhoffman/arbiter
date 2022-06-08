@@ -10,7 +10,6 @@ import qualified Data.Aeson                    as JSON
 import           Import
 import           Network.HTTP.Simple            ( JSONException
                                                 , Request
-                                                , Response
                                                 )
 import qualified Network.HTTP.Simple           as HTTP
 import           Prelude                        ( read )
@@ -79,8 +78,8 @@ perPage :: PageNumber
 perPage = 100
 
 
-buildRequest :: Text -> PageNumber -> Request
-buildRequest nomicsApiKey currentPage =
+buildRequest :: App -> PageNumber -> Request
+buildRequest env currentPage =
   HTTP.setRequestHost host
     $ HTTP.setRequestPort 443
     $ HTTP.setRequestSecure True
@@ -93,27 +92,27 @@ buildRequest nomicsApiKey currentPage =
         , ("status"  , Just $ encodeStatus Active)
         , ("convert" , Just $ encodeFiat USD)
         ]
+    -- $ HTTP.setRequestManager mgr
         HTTP.defaultRequest
  where
-  host = "api.nomics.com"
-  path = "v1/currencies/ticker"
+  host         = "api.nomics.com"
+  path         = "v1/currencies/ticker"
+  nomicsApiKey = view nomicsApiKeyL env
 
 
 -- Nomics API has a rate limit of 1 request per second w/ free API keys. Need to debounce.
 fetchAssets :: RIO App (Either JSONException [Crypto])
 fetchAssets = do
-  env <- ask
-  let nomicsApiKey = view nomicsApiKeyL env
-  response <- HTTP.httpJSONEither $ buildRequest nomicsApiKey (1 :: Integer)
+  env      <- ask
+  response <- HTTP.httpJSONEither $ buildRequest env (1 :: Integer)
   return $ HTTP.getResponseBody response
 
 
 -- Make a single API request to read pagination headers
 preflight :: RIO App Integer
 preflight = do
-  env <- ask
-  let nomicsApiKey = view nomicsApiKeyL env
-  response <- HTTP.httpNoBody $ buildRequest nomicsApiKey 1
+  env      <- ask
+  response <- HTTP.httpNoBody $ buildRequest env (1 :: Integer)
   let totalItems = B.concat . HTTP.getResponseHeader "X-Pagination-Total-Items" $ response
   logInfo $ "Preflight check found " <> displayShow totalItems <> " total assets"
   return (read $ show totalItems :: Integer)
