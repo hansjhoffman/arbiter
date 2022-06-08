@@ -98,11 +98,20 @@ buildRequest env batch =
         ]
     $ HTTP.setRequestBodyJSON batch HTTP.defaultRequest
  where
+  algoliaApiKey :: Text
   algoliaApiKey = view algoliaApiKeyL env
-  algoliaAppId  = view algoliaAppIdL env
-  algoliaIndex  = view algoliaIndexL env
-  host          = T.encodeUtf8 algoliaAppId <> "-dsn.algolia.net"
-  path          = "1/indexes/" <> T.encodeUtf8 algoliaIndex <> "/batch"
+
+  algoliaAppId :: Text
+  algoliaAppId = view algoliaAppIdL env
+
+  algoliaIndex :: Text
+  algoliaIndex = view algoliaIndexL env
+
+  host :: ByteString
+  host = T.encodeUtf8 algoliaAppId <> "-dsn.algolia.net"
+
+  path :: ByteString
+  path = "1/indexes/" <> T.encodeUtf8 algoliaIndex <> "/batch"
 
 
 -- | https://www.algolia.com/doc/rest-api/search/#batch-write-operations

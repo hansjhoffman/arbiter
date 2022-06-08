@@ -95,8 +95,13 @@ buildRequest env currentPage =
     -- $ HTTP.setRequestManager mgr
         HTTP.defaultRequest
  where
-  host         = "api.nomics.com"
-  path         = "v1/currencies/ticker"
+  host :: ByteString
+  host = "api.nomics.com"
+
+  path :: ByteString
+  path = "v1/currencies/ticker"
+
+  nomicsApiKey :: Text
   nomicsApiKey = view nomicsApiKeyL env
 
 
