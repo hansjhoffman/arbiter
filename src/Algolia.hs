@@ -2,10 +2,11 @@ module Algolia
   ( saveObjects
   ) where
 
-import           Data.Aeson
+import           Data.Aeson                     ( ToJSON )
 import qualified Data.Aeson                    as JSON
 import           Data.Char                      ( toLower )
 import           Import
+import           Network.HTTP.Simple            ( Request )
 import qualified Network.HTTP.Simple           as HTTP
 import           Nomics                         ( Crypto(..) )
 import           ObjectId                       ( ObjectID
@@ -84,23 +85,32 @@ jsonOptions prefix = JSON.defaultOptions
   applyFirst f (x : xs) = f x : xs
 
 
+buildRequest :: App -> BatchRequest -> Request
+buildRequest env batch =
+  HTTP.setRequestHost host
+    $ HTTP.setRequestMethod "POST"
+    $ HTTP.setRequestPort 443
+    $ HTTP.setRequestSecure True
+    $ HTTP.setRequestPath path
+    $ HTTP.setRequestHeaders
+        [ ("X-Algolia-API-Key"       , T.encodeUtf8 algoliaApiKey)
+        , ("X-Algolia-Application-Id", T.encodeUtf8 algoliaAppId)
+        ]
+    $ HTTP.setRequestBodyJSON batch HTTP.defaultRequest
+ where
+  algoliaApiKey = view algoliaApiKeyL env
+  algoliaAppId  = view algoliaAppIdL env
+  algoliaIndex  = view algoliaIndexL env
+  host          = T.encodeUtf8 algoliaAppId <> "-dsn.algolia.net"
+  path          = "1/indexes/" <> T.encodeUtf8 algoliaIndex <> "/batch"
+
+
 -- | https://www.algolia.com/doc/rest-api/search/#batch-write-operations
 saveBatch :: BatchRequest -> RIO App ()
 saveBatch batch = do
-  env <- ask
-  let algoliaIndex  = view algoliaIndexL env
-      algoliaAppId  = view algoliaAppIdL env
-      algoliaApiKey = view algoliaApiKeyL env
-      url           = "https://" <> algoliaAppId <> "-dsn.algolia.net"
-  nakedRequest <- HTTP.parseRequest (T.unpack url)
-  let req =
-        HTTP.setRequestMethod "POST"
-          $ HTTP.setRequestPath ("1/indexes/" <> T.encodeUtf8 algoliaIndex <> "/batch")
-          $ HTTP.addRequestHeader "X-Algolia-API-Key" (T.encodeUtf8 algoliaApiKey)
-          $ HTTP.addRequestHeader "X-Algolia-Application-Id" (T.encodeUtf8 algoliaAppId)
-          $ HTTP.setRequestBodyJSON batch nakedRequest
-  res <- HTTP.httpNoBody req
-  logInfo ("Batch uploaded: " <> displayShow (HTTP.getResponseStatusCode res))
+  env      <- ask
+  response <- HTTP.httpNoBody $ buildRequest env batch
+  logInfo ("Batch uploaded: " <> displayShow (HTTP.getResponseStatusCode response))
 
 
 -- | Algolia docs suggest a max batch size of 100K objects.
