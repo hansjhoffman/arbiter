@@ -2,23 +2,22 @@ module Run
   ( run
   ) where
 
-import qualified Algolia
+-- import qualified Algolia
 import           Import
-import           Nomics                         ( Crypto(..) )
 import qualified Nomics
 
 
 run :: RIO App ()
 run = do
   logInfo "Fetching crypto assets..."
-  res <- Nomics.fetchAssets
-  logInfo "Done"
+  totalItems <- Nomics.preflight
+  let totalPages = ceiling $ fromInteger totalItems / 100
+  logInfo $ "Preflight check found " <> displayShow totalItems <> " total assets"
+  logInfo $ "Total pages: " <> displayShow totalPages
+  results <- sequence [Nomics.fetchAssets]
+  -- results2 <- concat <$> sequence [Nomics.fetchAssets]
+  -- results <- sequence [Nomics.fetchAssets 1, Nomics.fetchAssets 2, ...]
   -- cryptoAssets <- Nomics.fetchAssets
   -- logInfo "Uploading entries to Alogolia..."
-  -- Algolia.saveObjects [btc, eth]
- where
-  btc :: Crypto
-  btc = Crypto "btc" "https://image-url.com" "Bitcoin" "BTC"
-
-  eth :: Crypto
-  eth = Crypto "eth" "https://image-url.com" "Ethereum" "ETH"
+  -- Algolia.saveObjects results
+  logInfo "Done!"

@@ -1,6 +1,7 @@
 module Nomics
   ( Crypto(..)
   , fetchAssets
+  , preflight
   ) where
 
 import           Data.Aeson                     ( (.:)
@@ -119,7 +120,6 @@ preflight = do
   env      <- ask
   response <- HTTP.httpNoBody $ buildRequest env (1 :: Integer)
   let totalItems = B.concat . HTTP.getResponseHeader "X-Pagination-Total-Items" $ response
-  logInfo $ "Preflight check found " <> displayShow totalItems <> " total assets"
   return (read $ show totalItems :: Integer)
 
 
@@ -134,5 +134,8 @@ preflight = do
 -- ** should any one of the network requests fail, fail completely and log error
 
 -- 1. make a preflight check that ignores the body, grabs an returns the totalCount from the header
--- 2. use that to calcuate the number of requets that need to be made, describe them, then fold/loop over
+-- 2. use that to calcuate the number of requets that need to be made, describe them, then sequence/fold
 -- them?
+
+-- fmap concat $ sequence [Right [1,2,3], Right [4,5,6]] ==> Right [1,2,3,4,5,6]
+-- fmap concat $ sequence [Right [1,2,3], Left "asdf" ]  ==> Left "asdf"
