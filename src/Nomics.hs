@@ -119,7 +119,8 @@ preflight :: RIO App Integer
 preflight = do
   env      <- ask
   response <- HTTP.httpNoBody $ buildRequest env (1 :: Integer)
-  let totalItems = B.concat . HTTP.getResponseHeader "X-Pagination-Total-Items" $ response
+  let totalItems :: ByteString
+      totalItems = B.concat . HTTP.getResponseHeader "X-Pagination-Total-Items" $ response
   return (read $ show totalItems :: Integer)
 
 
